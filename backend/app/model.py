@@ -8,3 +8,8 @@ if not MODEL_PATH.exists():
 
 model = xgb.Booster()
 model.load_model(MODEL_PATH)
+
+def predict_probability(features):
+    dmatrix = xgb.DMatrix(features, enable_categorical=True)
+    probability = model.predict(dmatrix)[0]
+    return float(probability)
