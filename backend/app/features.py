@@ -1,4 +1,5 @@
 from pathlib import Path
+import pickle
 import pandas as pd
 
 DATA_DIR = Path(__file__).parent.parent / "data"
@@ -64,9 +65,11 @@ def get_nearest_grid(latitude, longitude, grid_lookup):
     row = grid_lookup.loc[idx]
     return row["grid_id"], row["lat_grid"], row["lon_grid"]
 
-
-grid_history, grid_hour_history, grid_day_history, grid_time_history, grid_weekend_history = build_historical_lookups()
 grid_lookup = build_grid_lookup()
+LOOKUP_PATH = Path(__file__).parent.parent / "models" / "historical_lookups.pkl"
+
+with open(LOOKUP_PATH, "rb") as file:
+    grid_history, grid_hour_history, grid_day_history, grid_time_history, grid_weekend_history = pickle.load(file)
 
 GRID_CATEGORIES = grid_lookup["grid_id"].astype("category").cat.categories
 TIME_CATEGORIES = pd.Index(["Afternoon", "Evening", "Morning", "Night"])
