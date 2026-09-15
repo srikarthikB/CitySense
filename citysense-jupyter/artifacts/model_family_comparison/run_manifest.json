@@ -1,0 +1,39 @@
+{
+  "random_state": 42,
+  "train_years": [
+    2020,
+    2021,
+    2022,
+    2023
+  ],
+  "validation_year": 2024,
+  "test_year_used": false,
+  "total_sample": 1000000,
+  "sample_sizes": {
+    "2020": 250513,
+    "2021": 249829,
+    "2022": 249829,
+    "2023": 249829
+  },
+  "features": [
+    "grid_id",
+    "hour",
+    "historical_grid_crime_count",
+    "historical_grid_hour_crime_count",
+    "day_of_week",
+    "historical_grid_day_crime_count",
+    "time_period",
+    "historical_grid_time_period_crime_count",
+    "is_weekend",
+    "historical_grid_weekend_crime_count",
+    "year",
+    "month",
+    "lat_grid",
+    "lon_grid"
+  ],
+  "categorical_features": [
+    "grid_id",
+    "time_period"
+  ],
+  "prediction_batch_size": 500000
+}

@@ -1,0 +1,13 @@
+venv/
+__pycache__/
+*.pyc
+
+backend/data/
+backend/models/
+
+.ipynb_checkpoints/
+
+citysense-jupyter/data/
+citysense-jupyter/*.parquet
+citysense-jupyter/*.zip
+citysense-jupyter/artifacts/model_family_comparison/*.npz
