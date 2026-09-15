@@ -65,10 +65,14 @@ def get_nearest_grid(latitude, longitude, grid_lookup):
     row = grid_lookup.loc[idx]
     return row["grid_id"], row["lat_grid"], row["lon_grid"]
 
-grid_lookup = build_grid_lookup()
-LOOKUP_PATH = Path(__file__).parent.parent / "models" / "historical_lookups.pkl"
+GRID_LOOKUP_PATH = Path(__file__).parent.parent / "models" / "grid_lookup.pkl"
 
-with open(LOOKUP_PATH, "rb") as file:
+with open(GRID_LOOKUP_PATH, "rb") as file:
+    grid_lookup = pickle.load(file)
+
+HISTORICAL_LOOKUP_PATH = Path(__file__).parent.parent / "models" / "historical_lookups.pkl"
+
+with open(HISTORICAL_LOOKUP_PATH, "rb") as file:
     grid_history, grid_hour_history, grid_day_history, grid_time_history, grid_weekend_history = pickle.load(file)
 
 GRID_CATEGORIES = grid_lookup["grid_id"].astype("category").cat.categories
