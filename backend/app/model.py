@@ -3,13 +3,18 @@ import xgboost as xgb
 
 MODEL_PATH = Path(__file__).parent.parent / "models" / "citysense_final_model.json"
 
-if not MODEL_PATH.exists():
-    raise FileNotFoundError(f"Model file not found: {MODEL_PATH}")
+model = None
 
-model = xgb.Booster()
-model.load_model(MODEL_PATH)
+def get_model():
+    global model
+    if model is None:
+        if not MODEL_PATH.exists():
+            raise FileNotFoundError(f"Model file not found: {MODEL_PATH}")
+        model = xgb.Booster()
+        model.load_model(MODEL_PATH)
+    return model
 
 def predict_probability(features):
     dmatrix = xgb.DMatrix(features, enable_categorical=True)
-    probability = model.predict(dmatrix)[0]
+    probability = get_model().predict(dmatrix)[0]
     return float(probability)

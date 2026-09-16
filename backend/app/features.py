@@ -2,61 +2,40 @@ from pathlib import Path
 import pickle
 import pandas as pd
 
-DATA_DIR = Path(__file__).parent.parent / "data"
+MODELS_DIR = Path(__file__).parent.parent / "models"
 
-def build_historical_lookups():
-    grid_history = []
-    grid_hour_history = []
-    grid_day_history = []
-    grid_time_history = []
-    grid_weekend_history = []
+grid_lookup = None
+grid_history = None
+grid_hour_history = None
+grid_day_history = None
+grid_time_history = None
+grid_weekend_history = None
+GRID_CATEGORIES = None
+TIME_CATEGORIES = pd.Index(["Afternoon", "Evening", "Morning", "Night"])
 
-    for year in range(2020, 2026):
-        path = DATA_DIR / f"citysense_{year}.parquet"
-        df = pd.read_parquet(
-            path,
-            columns=[
-                "grid_id",
-                "crime_count",
-                "hour",
-                "day_of_week",
-                "time_period",
-                "is_weekend"
-            ]
-        )
+def load_lookups():
+    global grid_lookup
+    global grid_history
+    global grid_hour_history
+    global grid_day_history
+    global grid_time_history
+    global grid_weekend_history
+    global GRID_CATEGORIES
+    if grid_lookup is None:
+        with open(MODELS_DIR / "grid_lookup.pkl", "rb") as file:
+            grid_lookup = pickle.load(file)
+        with open(MODELS_DIR / "historical_lookups.pkl", "rb") as file:
+            (
+                grid_history,
+                grid_hour_history,
+                grid_day_history,
+                grid_time_history,
+                grid_weekend_history
+            ) = pickle.load(file)
+        GRID_CATEGORIES = grid_lookup["grid_id"].astype("category").cat.categories
 
-        grid_history.append(
-            df.groupby("grid_id")["crime_count"].sum()
-        )
-        grid_hour_history.append(
-            df.groupby(["grid_id", "hour"])["crime_count"].sum()
-        )
-        grid_day_history.append(
-            df.groupby(["grid_id", "day_of_week"])["crime_count"].sum()
-        )
-        grid_time_history.append(
-            df.groupby(["grid_id", "time_period"])["crime_count"].sum()
-        )
-        grid_weekend_history.append(
-            df.groupby(["grid_id", "is_weekend"])["crime_count"].sum()
-        )
-
-    return (
-        pd.concat(grid_history).groupby(level=0).sum(),
-        pd.concat(grid_hour_history).groupby(level=[0, 1]).sum(),
-        pd.concat(grid_day_history).groupby(level=[0, 1]).sum(),
-        pd.concat(grid_time_history).groupby(level=[0, 1]).sum(),
-        pd.concat(grid_weekend_history).groupby(level=[0, 1]).sum()
-    )
-
-
-def build_grid_lookup():
-    path = DATA_DIR / "citysense_2025.parquet"
-    df = pd.read_parquet(path, columns=["grid_id", "lat_grid", "lon_grid"])
-    return df.drop_duplicates("grid_id").reset_index(drop=True)
-
-
-def get_nearest_grid(latitude, longitude, grid_lookup):
+def get_nearest_grid(latitude, longitude):
+    load_lookups()
     distances = (
         (grid_lookup["lat_grid"] - latitude) ** 2
         + (grid_lookup["lon_grid"] - longitude) ** 2
@@ -65,23 +44,10 @@ def get_nearest_grid(latitude, longitude, grid_lookup):
     row = grid_lookup.loc[idx]
     return row["grid_id"], row["lat_grid"], row["lon_grid"]
 
-GRID_LOOKUP_PATH = Path(__file__).parent.parent / "models" / "grid_lookup.pkl"
-
-with open(GRID_LOOKUP_PATH, "rb") as file:
-    grid_lookup = pickle.load(file)
-
-HISTORICAL_LOOKUP_PATH = Path(__file__).parent.parent / "models" / "historical_lookups.pkl"
-
-with open(HISTORICAL_LOOKUP_PATH, "rb") as file:
-    grid_history, grid_hour_history, grid_day_history, grid_time_history, grid_weekend_history = pickle.load(file)
-
-GRID_CATEGORIES = grid_lookup["grid_id"].astype("category").cat.categories
-TIME_CATEGORIES = pd.Index(["Afternoon", "Evening", "Morning", "Night"])
-
-
 def create_inference_row(latitude, longitude, date, hour):
+    load_lookups()
     timestamp = pd.Timestamp(date)
-    grid_id, lat_grid, lon_grid = get_nearest_grid(latitude, longitude, grid_lookup)
+    grid_id, lat_grid, lon_grid = get_nearest_grid(latitude, longitude)
     day_of_week = timestamp.dayofweek
     if hour < 5:
         time_period = "Night"
@@ -92,13 +58,11 @@ def create_inference_row(latitude, longitude, date, hour):
     else:
         time_period = "Evening"
     is_weekend = int(day_of_week >= 5)
-
     historical_grid_crime_count = grid_history.get(grid_id, 0)
     historical_grid_hour_crime_count = grid_hour_history.get((grid_id, hour), 0)
     historical_grid_day_crime_count = grid_day_history.get((grid_id, day_of_week), 0)
     historical_grid_time_period_crime_count = grid_time_history.get((grid_id, time_period), 0)
     historical_grid_weekend_crime_count = grid_weekend_history.get((grid_id, is_weekend), 0)
-
     row = pd.DataFrame([{
         "grid_id": grid_id,
         "hour": hour,
