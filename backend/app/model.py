@@ -16,6 +16,11 @@ def get_model():
         if not MODEL_PATH.exists():
             raise FileNotFoundError(f"Model file not found: {MODEL_PATH}")
 
+        print(
+            f"DEBUG: model size = {MODEL_PATH.stat().st_size / (1024 * 1024):.2f} MB",
+            flush=True
+        )
+
         model = xgb.Booster()
         model.load_model(MODEL_PATH)
 
