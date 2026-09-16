@@ -21,9 +21,19 @@ def load_lookups():
     global grid_time_history
     global grid_weekend_history
     global GRID_CATEGORIES
+
+    print("DEBUG: load_lookups() started", flush=True)
+
     if grid_lookup is None:
+        print("DEBUG: loading grid_lookup.pkl", flush=True)
+
         with open(MODELS_DIR / "grid_lookup.pkl", "rb") as file:
             grid_lookup = pickle.load(file)
+
+        print("DEBUG: grid_lookup loaded", flush=True)
+
+        print("DEBUG: loading historical_lookups.pkl", flush=True)
+
         with open(MODELS_DIR / "historical_lookups.pkl", "rb") as file:
             (
                 grid_history,
@@ -32,7 +42,14 @@ def load_lookups():
                 grid_time_history,
                 grid_weekend_history
             ) = pickle.load(file)
+
+        print("DEBUG: historical lookups loaded", flush=True)
+
         GRID_CATEGORIES = grid_lookup["grid_id"].astype("category").cat.categories
+
+        print("DEBUG: categories created", flush=True)
+
+    print("DEBUG: load_lookups() finished", flush=True)
 
 def get_nearest_grid(latitude, longitude):
     load_lookups()
